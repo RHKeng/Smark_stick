@@ -13,6 +13,12 @@
             android:process=":remote">
         </service>
 
+        <service android:name="com.baidu.trace.LBSTraceService"
+            android:enabled="true"
+            android:exported="true">
+
+        </service>
+
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
             android:value="YchHPI0oXD5qf21xQIUPUXHPWNSpBO5b"
@@ -42,5 +48,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"></uses-permission>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <permission android:name="android.permission.VIBRATE"/>
+    <permission android:name="android.permission.WRITE_SETTINGS"/>
 
 </manifest>
