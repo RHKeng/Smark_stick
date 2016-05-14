@@ -49,8 +49,11 @@ import com.baidu.mapapi.search.route.WalkingRoutePlanOption;
 import com.baidu.mapapi.search.route.WalkingRouteResult;
 import com.baidu.mapapi.utils.DistanceUtil;
 import com.baidu.trace.LBSTraceClient;
+import com.baidu.trace.OnEntityListener;
+import com.baidu.trace.OnGeoFenceListener;
 import com.baidu.trace.OnStartTraceListener;
 import com.baidu.trace.Trace;
+import com.baidu.trace.TraceLocation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,7 +64,7 @@ import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity implements OnGetRoutePlanResultListener {
     public LocationClient mLocationClient = null;
-    private LBSTraceClient LBSTraceclient = null;
+    private static LBSTraceClient LBSTraceclient = null;
     private BDLocationListener myListener = new BDLocationListener() {
 
         @Override
@@ -148,12 +151,15 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
     private double Analy_lng;
     private double Stick_lat = 23.17197;
     private double Stick_lng = 113.3465;
+    private double Stick_radius_lat = 23.166;
+    private double Stick_radius_lng = 113.3406;
     private String addr;
     private BaiduMap baiduMap;
     private Button Route;
     private Button Lng_Lat_Location;
     private Boolean Search_Type = true;
     private Boolean Address_Search = false;
+    private double Distance_Stick;
     private double Distance;
     private boolean Route_Mark = true;
     private ListView Route_listview;
@@ -170,12 +176,82 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
     private int[] Destination_ImageIds = new int[]{
             R.drawable.stick_photo,R.drawable.destination,R.drawable.route_cancel
     };
+
+    private ListView Geo_listview;
+    private ListView Operation_listview;
+    private Button Geo_button;
+    private String[] Geo_Types = new String[]{
+            "手机拐杖绑定","拐杖地理围栏","取消操作"
+    };
+    private int[] Geo_ImageIds = new int[]{
+            R.drawable.binding,R.drawable.track,R.drawable.cancel
+    };
+    private String[] Operation_Types = new String[]{
+            "开启","关闭","返回"
+    };
+    private int[] Operation_ImageIds = new int[]{
+            R.drawable.open,R.drawable.close,R.drawable.operation_cancel
+    };
+    private boolean Geo_State = false;
+    private boolean Binding_State = false;
+    private int GB_Type = 0;
+
     private int Destination_Point = 0;
 
     private RouteLine route = null;
     private OverlayManager routeOverlay = null;
     private RoutePlanSearch mSearch = null;
     private boolean Search_Click = false;
+
+    /**
+     * 轨迹服务
+     */
+    protected static Trace trace = null;
+
+    /**
+     * entity标识
+     */
+    protected static String entityName = null;
+
+    /**
+     * 鹰眼服务ID，开发者创建的鹰眼服务对应的服务ID
+     */
+    protected static long serviceId = 0;
+
+    /**
+     * 轨迹服务类型（0 : 不建立socket长连接， 1 : 建立socket长连接但不上传位置数据，2 : 建立socket长连接并上传位置数据）
+     */
+    private int traceType = 2;
+    /**
+     * Entity监听器
+     */
+    protected static OnEntityListener entityListener = null;
+
+    // 围栏圆心纬度
+    private double latitude = 22.166;
+
+    // 围栏圆心经度
+    private double longitude = 113.3406;
+
+    // 围栏半径
+    protected static int radius = 1000;
+
+    protected static int radiusTemp = radius;
+
+    // 围栏编号
+    protected static int fenceId = 0;
+
+    // 延迟时间（单位: 分）
+    private int delayTime = 5;
+
+    // 地理围栏监听器
+    protected static OnGeoFenceListener geoFenceListener = null;
+
+    // 围栏覆盖物
+    protected static OverlayOptions fenceOverlay = null;
+
+    protected static OverlayOptions fenceOverlayTemp = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -201,27 +277,115 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
         //实例化轨迹服务客户端
         LBSTraceclient = new LBSTraceClient(getApplicationContext());
         //鹰眼服务ID
-        long serviceId = 116616;
+        serviceId = 116616;
         //entity标识
-        String entityName = "smark_stick";
+        entityName = "smark_stick";
         //轨迹服务类型（0 : 不上传位置数据，也不接收报警信息； 1 : 不上传位置数据，但接收报警信息；2 : 上传位置数据，且接收报警信息）
-        int  traceType = 1;
+        traceType = 2;
         //实例化轨迹服务
-        Trace trace = new Trace(getApplicationContext(), serviceId, entityName, traceType);
+        trace = new Trace(getApplicationContext(), serviceId, entityName, traceType);
         //实例化开启轨迹服务回调接口
         OnStartTraceListener startTraceListener = new OnStartTraceListener() {
             //开启轨迹服务回调接口（arg0 : 消息编码，arg1 : 消息内容，详情查看类参考）
             @Override
             public void onTraceCallback(int arg0, String arg1) {
+                //Toast.makeText(MainActivity.this,arg1,Toast.LENGTH_SHORT).show();
             }
             //轨迹服务推送接口（用于接收服务端推送消息，arg0 : 消息类型，arg1 : 消息内容，详情查看类参考）
             @Override
             public void onTracePushCallback(byte arg0, String arg1) {
+                Toast.makeText(MainActivity.this,arg1,Toast.LENGTH_SHORT).show();
             }
         };
 
         //开启轨迹服务
         LBSTraceclient.startTrace(trace, startTraceListener);
+
+        // 初始化OnEntityListener
+        //initOnEntityListener();
+        entityListener = new OnEntityListener() {
+
+            // 请求失败回调接口
+            @Override
+            public void onRequestFailedCallback(String arg0) {
+                // TODO Auto-generated method stub
+                // TrackApplication.showMessage("entity请求失败回调接口消息 : " + arg0);
+                System.out.println("entity请求失败回调接口消息 : " + arg0);
+                Toast.makeText(MainActivity.this,"1110",Toast.LENGTH_SHORT).show();
+            }
+
+            // 添加entity回调接口
+            public void onAddEntityCallback(String arg0) {
+                // TODO Auto-generated method stub
+                TrackApplication.showMessage("添加entity回调接口消息 : " + arg0);
+                Toast.makeText(MainActivity.this,"111",Toast.LENGTH_SHORT).show();
+            }
+
+            // 查询entity列表回调接口
+            @Override
+            public void onQueryEntityListCallback(String message) {
+                // TODO Auto-generated method stub
+                System.out.println("entityList回调消息 : " + message);
+            }
+
+            @Override
+            public void onReceiveLocation(TraceLocation location) {
+                // TODO Auto-generated method stub
+            }
+
+        };
+
+        addEntity();
+        createFence();
+
+        geoFenceListener = new OnGeoFenceListener() {
+            @Override
+            public void onRequestFailedCallback(String s) {
+                Toast.makeText(MainActivity.this,"geofence请求失败",Toast.LENGTH_SHORT).show();
+            }
+
+            //创建圆形围栏回调接口
+            @Override
+            public void onCreateCircularFenceCallback(String arg0) {
+                Toast.makeText(MainActivity.this,"222",Toast.LENGTH_SHORT).show();
+            }
+
+            //更新圆形围栏回调接口
+            @Override
+            public void onUpdateCircularFenceCallback(String arg0) {
+                System.out.println("更新圆形围栏回调接口消息 : " + arg0);
+            }
+
+            //延迟报警回调接口
+            @Override
+            public void onDelayAlarmCallback(String arg0) {
+                System.out.println("延迟报警回调接口消息 : " + arg0);
+            }
+
+            //删除围栏回调接口
+            @Override
+            public void onDeleteFenceCallback(String arg0) {
+                System.out.println(" 删除围栏回调接口消息 : " + arg0);
+            }
+
+            //查询围栏列表回调接口
+            @Override
+            public void onQueryFenceListCallback(String arg0) {
+                System.out.println("查询围栏列表回调接口消息 : " + arg0);
+            }
+
+            //查询历史报警回调接口
+            @Override
+            public void onQueryHistoryAlarmCallback(String arg0) {
+                System.out.println(" 查询历史报警回调接口消息 : " + arg0);
+            }
+
+            //查询监控对象状态回调接口
+            @Override
+            public void onQueryMonitoredStatusCallback(String arg0) {
+                System.out.println(" 查询监控对象状态回调接口消息 : " + arg0);
+            }
+        };
 
         //实现地图位置调整
         baiduMap.setOnMapLoadedCallback(new BaiduMap.OnMapLoadedCallback() {
@@ -623,6 +787,101 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
             }
         });
 
+        Geo_button = (Button) findViewById(R.id.Geographical_Enclosure);
+        Geo_button.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Geo_button.setVisibility(View.INVISIBLE);
+                Geo_listview.setVisibility(View.VISIBLE);
+            }
+        });
+
+        Geo_listview = (ListView) findViewById(R.id.Geo_listView);
+        //设定Geo_listview的内容
+        List<Map<String,Object>> Geo_listItems = new ArrayList<Map<String,Object>>();
+        for (int i=0;i<Geo_Types.length;i++){
+            Map<String,Object> listItem = new HashMap<String,Object>();
+            listItem.put("header",Geo_ImageIds[i]);
+            listItem.put("Route_Type",Geo_Types[i]);
+            Geo_listItems.add(listItem);
+        }
+        //创建一个SimpleAdapter
+        SimpleAdapter Geo_simpleAdapter = new SimpleAdapter(this,Geo_listItems,R.layout.simple_item,
+                new String[]{"header","Route_Type"},new int[]{R.id.header,R.id.Route_Type});
+        //为Geo_listview设置Adapter
+        Geo_listview.setAdapter(Geo_simpleAdapter);
+
+        //为Geo_listview的列表项的单击事件绑定事件监听器
+        Geo_listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Geo_listview.setVisibility(View.INVISIBLE);
+                if (position == 0)   //此时代表点击了地理围栏选项
+                {
+                    Operation_listview.setVisibility(View.VISIBLE);
+                    GB_Type = 1;
+                }
+                if (position == 1) {   //此时代表点击了手机拐杖绑定选项
+                    Operation_listview.setVisibility(View.VISIBLE);
+                    GB_Type = 2;
+                }
+                if (position == 2) {   //此时代表点击了返回选项
+                    Geo_button.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
+        Operation_listview = (ListView) findViewById(R.id.Operation_listView);
+        //设定Operation_listview的内容
+        List<Map<String,Object>> Operation_listItems = new ArrayList<Map<String,Object>>();
+        for (int i=0;i<Operation_Types.length;i++){
+            Map<String,Object> listItem = new HashMap<String,Object>();
+            listItem.put("header",Operation_ImageIds[i]);
+            listItem.put("Route_Type",Operation_Types[i]);
+            Operation_listItems.add(listItem);
+        }
+        //创建一个SimpleAdapter
+        SimpleAdapter Operation_simpleAdapter = new SimpleAdapter(this,Operation_listItems,R.layout.simple_item,
+                new String[]{"header","Route_Type"},new int[]{R.id.header,R.id.Route_Type});
+        //为Operation_listview设置Adapter
+        Operation_listview.setAdapter(Operation_simpleAdapter);
+
+        //为Operation_listview的列表项的单击事件绑定事件监听器
+        Operation_listview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Geo_button.setVisibility(View.VISIBLE);
+                Operation_listview.setVisibility(View.INVISIBLE);
+                if(position==0)   //此时代表点击了开启选项
+                {
+                    if(GB_Type==1)   //此时代表点击了手机拐杖绑定
+                    {
+                        Binding_State = true;
+                    }
+                    else {
+                        if(GB_Type==2)  //此时代表点击了地理围栏
+                        {
+                            Geo_State = true;
+                        }
+                    }
+                }
+                if(position==1){   //此时代表点击了关闭选项
+                    if(GB_Type==1)   //此时代表点击了手机拐杖绑定
+                    {
+                        Binding_State = false;
+                    }
+                    else {
+                        if(GB_Type==2)  //此时代表点击了地理围栏
+                        {
+                            Geo_State = false;
+                        }
+                    }
+                }
+                if(position==2){   //此时代表点击了返回选项
+                    Geo_listview.setVisibility(View.VISIBLE);
+                }
+            }
+        });
 
         final Handler handler = new Handler(){
             @Override
@@ -631,7 +890,10 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
                     UpdatePosition();
                 }
                 if(msg.what==0x1234){
-                    Toast.makeText(MainActivity.this,"距离："+Distance+"超出预设范围，请注意老人安全",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this,"距离："+Distance+"老人距离过远，请注意老人安全",Toast.LENGTH_SHORT).show();
+                }
+                if(msg.what==0x12345){
+                    Toast.makeText(MainActivity.this,"老人超出预设范围，请注意老人安全",Toast.LENGTH_SHORT).show();
                 }
             }
         };
@@ -659,16 +921,30 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
                 //获取计算拐杖与手机的距离
                 LatLng GPS_point = new LatLng(GPS_lat,GPS_lng);
                 LatLng Stick_point = new LatLng(Stick_lat,Stick_lng);
+                LatLng Stick_Radius_point = new LatLng(Stick_radius_lat,Stick_radius_lng);
 
                 Distance = DistanceUtil.getDistance(GPS_point,Stick_point);
+                Distance_Stick = DistanceUtil.getDistance(Stick_point,Stick_Radius_point);
 
-                //老人超出预设范围，提醒用户注意老人安全
-                if(Distance>=3000)
+                if(Geo_State)//代表开启了地理围栏
                 {
-                    handler.sendEmptyMessage(0x1234);
+                    //老人超出预设范围，提醒用户注意老人安全
+                    if(Distance_Stick>=5000)
+                    {
+                        handler.sendEmptyMessage(0x12345);
+                    }
+                }
+
+                if(Binding_State)//代表开启了手机拐杖绑定
+                {
+                    //老人距离用户过远，提醒用户注意老人安全
+                    if(Distance>=500)
+                    {
+                        handler.sendEmptyMessage(0x1234);
+                    }
                 }
             }
-        },0,60000);
+        },0,3000);
     }
 
     private void UpdatePosition() {
@@ -846,5 +1122,145 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
         public MyDrivingRouteOverlay(BaiduMap baiduMap) {
             super(baiduMap);
         }
+    }
+
+
+    /**
+     * 初始化OnEntityListener
+     */
+    /*
+    private void initOnEntityListener() {
+        entityListener = new OnEntityListener() {
+
+            // 请求失败回调接口
+            @Override
+            public void onRequestFailedCallback(String arg0) {
+                // TODO Auto-generated method stub
+                // TrackApplication.showMessage("entity请求失败回调接口消息 : " + arg0);
+                System.out.println("entity请求失败回调接口消息 : " + arg0);
+                Toast.makeText(MainActivity.this,"1110",Toast.LENGTH_SHORT).show();
+            }
+
+            // 添加entity回调接口
+            public void onAddEntityCallback(String arg0) {
+                // TODO Auto-generated method stub
+                TrackApplication.showMessage("添加entity回调接口消息 : " + arg0);
+                Toast.makeText(MainActivity.this,"111",Toast.LENGTH_SHORT).show();
+            }
+
+            // 查询entity列表回调接口
+            @Override
+            public void onQueryEntityListCallback(String message) {
+                // TODO Auto-generated method stub
+                System.out.println("entityList回调消息 : " + message);
+            }
+
+            @Override
+            public void onReceiveLocation(TraceLocation location) {
+                // TODO Auto-generated method stub
+            }
+
+        };
+    }
+    */
+
+
+    /**
+     * 添加entity
+     *
+     */
+    protected static void addEntity() {
+        // entity标识
+        String entityName = MainActivity.entityName;
+        // 属性名称（格式 : "key1=value1,columnKey2=columnValue2......."）
+        String columnKey = "";
+        MainActivity.LBSTraceclient.addEntity(MainActivity.serviceId, entityName, columnKey, MainActivity.entityListener);
+    }
+
+    /**
+     * 创建围栏（若创建围栏时，还未创建entity标识，请先使用addEntity(...)添加entity）
+     *
+     */
+    private void createFence() {
+
+        // 创建者（entity标识）
+        String creator = MainActivity.entityName;
+        // 围栏名称
+        String fenceName = MainActivity.entityName + "_fence";
+        // 围栏描述
+        String fenceDesc = "old_man";
+        // 监控对象列表（多个entityName，以英文逗号"," 分割）
+        String monitoredPersons = MainActivity.entityName;
+        // 观察者列表（多个entityName，以英文逗号"," 分割）
+        String observers = MainActivity.entityName;
+        // 生效时间列表
+        String validTimes = "0800,2300";
+        // 生效周期
+        int validCycle = 4;
+        // 围栏生效日期
+        String validDate = "";
+        // 生效日期列表
+        String validDays = "";
+        // 坐标类型 （1：GPS经纬度，2：国测局经纬度，3：百度经纬度）
+        int coordType = 3;
+        // 围栏圆心（圆心位置, 格式 : "经度,纬度"）
+        String center = longitude + "," + latitude;
+        // 围栏半径（单位 : 米）
+        double radius = MainActivity.radius;
+        // 报警条件（1：进入时触发提醒，2：离开时触发提醒，3：进入离开均触发提醒）
+        int alarmCondition = 3;
+
+        MainActivity.LBSTraceclient.createCircularFence(MainActivity.serviceId, creator, fenceName, fenceDesc,
+                monitoredPersons, observers,
+                validTimes, validCycle, validDate, validDays, coordType, center, radius, alarmCondition,
+                geoFenceListener);
+
+    }
+
+    /**
+     * 删除围栏
+     *
+     */
+    @SuppressWarnings("unused")
+    private static void deleteFence(int fenceId) {
+        MainActivity.LBSTraceclient.deleteFence(MainActivity.serviceId, fenceId, geoFenceListener);
+    }
+
+    /**
+     * 更新围栏
+     *
+     */
+    private void updateFence() {
+        // 围栏名称
+        String fenceName = MainActivity.entityName + "_fence";
+        // 围栏ID
+        int fenceId = MainActivity.fenceId;
+        // 围栏描述
+        String fenceDesc = "test fence";
+        // 监控对象列表（多个entityName，以英文逗号"," 分割）
+        String monitoredPersons = MainActivity.entityName;
+        // 观察者列表（多个entityName，以英文逗号"," 分割）
+        String observers = MainActivity.entityName;
+        // 生效时间列表
+        String validTimes = "0800,2300";
+        // 生效周期
+        int validCycle = 4;
+        // 围栏生效日期
+        String validDate = "";
+        // 生效日期列表
+        String validDays = "";
+        // 坐标类型 （1：GPS经纬度，2：国测局经纬度，3：百度经纬度）
+        int coordType = 3;
+        // 围栏圆心（圆心位置, 格式 : "经度,纬度"）
+        String center = longitude + "," + latitude;
+        // 围栏半径（单位 : 米）
+        double radius = MainActivity.radius;
+        // 报警条件（1：进入时触发提醒，2：离开时触发提醒，3：进入离开均触发提醒）
+        int alarmCondition = 3;
+
+        MainActivity.LBSTraceclient.updateCircularFence(MainActivity.serviceId, fenceName, fenceId, fenceDesc,
+                monitoredPersons,
+                observers, validTimes, validCycle, validDate, validDays, coordType, center, radius, alarmCondition,
+                geoFenceListener);
     }
 }

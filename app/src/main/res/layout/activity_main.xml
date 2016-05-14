@@ -129,6 +129,37 @@
             android:layout_marginLeft="30dp"
             />
 
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="地理围栏"
+            android:id="@+id/Geographical_Enclosure"
+            />
+
+        <ListView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/Geo_listView"
+            android:divider="#f00"
+            android:choiceMode="singleChoice"
+            android:layout_marginTop="200dp"
+            android:layout_marginLeft="100dp"
+            android:layout_marginBottom="30dp"
+            android:layout_marginRight="60dp"
+            android:visibility="gone"/>
+
+        <ListView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/Operation_listView"
+            android:divider="#f00"
+            android:choiceMode="singleChoice"
+            android:layout_marginTop="200dp"
+            android:layout_marginLeft="100dp"
+            android:layout_marginBottom="30dp"
+            android:layout_marginRight="60dp"
+            android:visibility="gone" />
+
     </RelativeLayout>
 
 </LinearLayout>
