@@ -10,6 +10,8 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.GridView;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
@@ -30,6 +32,7 @@ import com.baidu.mapapi.map.MarkerOptions;
 import com.baidu.mapapi.map.OverlayOptions;
 import com.baidu.mapapi.map.Polyline;
 import com.baidu.mapapi.model.LatLng;
+import com.baidu.mapapi.search.core.PoiInfo;
 import com.baidu.mapapi.search.core.RouteLine;
 import com.baidu.mapapi.search.core.SearchResult;
 import com.baidu.mapapi.search.geocode.GeoCodeOption;
@@ -37,6 +40,12 @@ import com.baidu.mapapi.search.geocode.GeoCodeResult;
 import com.baidu.mapapi.search.geocode.GeoCoder;
 import com.baidu.mapapi.search.geocode.OnGetGeoCoderResultListener;
 import com.baidu.mapapi.search.geocode.ReverseGeoCodeResult;
+import com.baidu.mapapi.search.poi.OnGetPoiSearchResultListener;
+import com.baidu.mapapi.search.poi.PoiDetailResult;
+import com.baidu.mapapi.search.poi.PoiDetailSearchOption;
+import com.baidu.mapapi.search.poi.PoiNearbySearchOption;
+import com.baidu.mapapi.search.poi.PoiResult;
+import com.baidu.mapapi.search.poi.PoiSearch;
 import com.baidu.mapapi.search.route.BikingRouteResult;
 import com.baidu.mapapi.search.route.DrivingRoutePlanOption;
 import com.baidu.mapapi.search.route.DrivingRouteResult;
@@ -62,7 +71,9 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MainActivity extends AppCompatActivity implements OnGetRoutePlanResultListener {
+public class MainActivity extends AppCompatActivity implements OnGetRoutePlanResultListener,OnGetPoiSearchResultListener {
+    private PoiSearch mPoiSearch = null;
+
     public LocationClient mLocationClient = null;
     private static LBSTraceClient LBSTraceclient = null;
     private BDLocationListener myListener = new BDLocationListener() {
@@ -198,6 +209,18 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
 
     private int Destination_Point = 0;
 
+    private ImageButton Search_Button;
+    private GridView Search_Gridview;
+    private int[] Search_ImageIds = new int[]{
+      R.drawable.search_cancel,R.drawable.hospital,R.drawable.pharmacy,R.drawable.park,
+            R.drawable.toilet,R.drawable.convenience_store,R.drawable.supermarket,R.drawable.restaurant
+    };
+    private String[] Search_Types = new String[]{
+      "取消","医院","药店","公园",
+            "洗手间","便利店","超市","餐厅"
+    };
+    private boolean Search_Operation =false;
+
     private RouteLine route = null;
     private OverlayManager routeOverlay = null;
     private RoutePlanSearch mSearch = null;
@@ -273,6 +296,10 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
         //初始化搜索模块，注册事件监听
         mSearch = RoutePlanSearch.newInstance();
         mSearch.setOnGetRoutePlanResultListener(this);
+
+        //初始化POI搜索模块，注册事件监听事件
+        mPoiSearch = PoiSearch.newInstance();
+        mPoiSearch.setOnGetPoiSearchResultListener(this);
 
         //实例化轨迹服务客户端
         LBSTraceclient = new LBSTraceClient(getApplicationContext());
@@ -852,33 +879,101 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Geo_button.setVisibility(View.VISIBLE);
                 Operation_listview.setVisibility(View.INVISIBLE);
-                if(position==0)   //此时代表点击了开启选项
+                if (position == 0)   //此时代表点击了开启选项
                 {
-                    if(GB_Type==1)   //此时代表点击了手机拐杖绑定
+                    if (GB_Type == 1)   //此时代表点击了手机拐杖绑定
                     {
                         Binding_State = true;
-                    }
-                    else {
-                        if(GB_Type==2)  //此时代表点击了地理围栏
+                    } else {
+                        if (GB_Type == 2)  //此时代表点击了地理围栏
                         {
                             Geo_State = true;
                         }
                     }
                 }
-                if(position==1){   //此时代表点击了关闭选项
-                    if(GB_Type==1)   //此时代表点击了手机拐杖绑定
+                if (position == 1) {   //此时代表点击了关闭选项
+                    if (GB_Type == 1)   //此时代表点击了手机拐杖绑定
                     {
                         Binding_State = false;
-                    }
-                    else {
-                        if(GB_Type==2)  //此时代表点击了地理围栏
+                    } else {
+                        if (GB_Type == 2)  //此时代表点击了地理围栏
                         {
                             Geo_State = false;
                         }
                     }
                 }
-                if(position==2){   //此时代表点击了返回选项
+                if (position == 2) {   //此时代表点击了返回选项
                     Geo_listview.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
+        //初始化搜索周边的按钮
+        Search_Button = (ImageButton) findViewById(R.id.Search_Button);
+        Search_Button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(Search_Operation){
+                    Search_Gridview.setVisibility(View.INVISIBLE);
+                    UpdatePosition();
+                    Search_Operation = false;
+                }
+                else {
+                    Search_Gridview.setVisibility(View.VISIBLE);
+                    Search_Button.setVisibility(View.INVISIBLE);
+                    Search_Operation = true;
+                }
+            }
+        });
+
+        //初始化网格列表
+        Search_Gridview = (GridView) findViewById(R.id.Search_gridView);
+        List<Map<String,Object>> Search_listItems = new ArrayList<Map<String,Object>>();
+        for(int i=0;i<Search_ImageIds.length;i++){
+            Map<String,Object> listItem = new HashMap<String,Object>();
+            listItem.put("top_image",Search_ImageIds[i]);
+            listItem.put("bottom_text",Search_Types[i]);
+            Search_listItems.add(listItem);
+        }
+        SimpleAdapter Search_simpleAdapter = new SimpleAdapter(this,Search_listItems,R.layout.search_item,new String[]{"top_image","bottom_text"},new int[]{R.id.top_image,R.id.bottom_text});
+        Search_Gridview.setAdapter(Search_simpleAdapter);
+
+        Search_Gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Search_Gridview.setVisibility(View.INVISIBLE);
+                Search_Button.setVisibility(View.VISIBLE);
+                if(position==0)   //按下了取消按钮
+                {
+                    Search_Operation = false;
+                }
+                if(position==1)   //按下了医院按钮
+                {
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
+                }
+                if(position==2)    //按下了药店按钮
+                {
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
+                }
+                if(position==3)   //按下了公园按钮
+                {
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
+                }
+                if(position==4)    //按下了洗手间按钮
+                {
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
+                }
+                if(position==5)   //按下了便利店按钮
+                {
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
+                }
+                if(position==6)   //按下了超市按钮
+                {
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
+                }
+                if(position==7)   //按下了餐厅按钮
+                {
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
                 }
             }
         });
@@ -907,7 +1002,11 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
 
                 }
                 else {
-                    handler.sendEmptyMessage(0x123);
+                    if(Search_Operation){
+                    }
+                    else {
+                        handler.sendEmptyMessage(0x123);
+                    }
                 }
             }
         },0,1500);
@@ -1021,6 +1120,8 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
 
     protected void onDestroy() {
         super.onDestroy();
+        mPoiSearch.destroy();
+        mSearch.destroy();
         mapView.onDestroy();
     }
 
@@ -1104,6 +1205,48 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
     @Override
     public void onGetBikingRouteResult(BikingRouteResult bikingRouteResult) {
 
+    }
+
+    @Override
+    public void onGetPoiResult(PoiResult poiResult) {
+        if (poiResult == null
+                || poiResult.error == SearchResult.ERRORNO.RESULT_NOT_FOUND) {
+            Toast.makeText(MainActivity.this, "未找到结果", Toast.LENGTH_LONG)
+                    .show();
+            return;
+        }
+        if (poiResult.error == SearchResult.ERRORNO.NO_ERROR) {
+            //baiduMap.clear();
+            PoiOverlay overlay = new MyPoiOverlay(baiduMap);
+            baiduMap.setOnMarkerClickListener(overlay);
+            overlay.setData(poiResult);
+            overlay.addToMap();
+            overlay.zoomToSpan();
+            return;
+        }
+    }
+
+    @Override
+    public void onGetPoiDetailResult(PoiDetailResult poiDetailResult) {
+
+    }
+
+    private class MyPoiOverlay extends PoiOverlay {
+
+        public MyPoiOverlay(BaiduMap baiduMap) {
+            super(baiduMap);
+        }
+
+        @Override
+        public boolean onPoiClick(int index) {
+            super.onPoiClick(index);
+            PoiInfo poi = getPoiResult().getAllPoi().get(index);
+            // if (poi.hasCaterDetails) {
+            mPoiSearch.searchPoiDetail((new PoiDetailSearchOption())
+                    .poiUid(poi.uid));
+            // }
+            return true;
+        }
     }
 
     private class MyTransitRouteOverlay extends TransitRouteOverlay {

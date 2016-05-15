@@ -160,6 +160,24 @@
             android:layout_marginRight="60dp"
             android:visibility="gone" />
 
+        <GridView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/Search_gridView"
+            android:numColumns="4"
+            android:layout_marginTop="300dp"
+            android:visibility="gone"
+            />
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/Search_Button"
+            android:background="@drawable/search"
+            android:layout_centerVertical="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true" />
+
     </RelativeLayout>
 
 </LinearLayout>
