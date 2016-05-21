@@ -74,6 +74,8 @@ import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity implements OnGetRoutePlanResultListener,OnGetPoiSearchResultListener {
     private PoiSearch mPoiSearch = null;
 
+    private NotificationClass notificationClass = null;
+    private enclosure_notification enclosure_notification = null;
     public LocationClient mLocationClient = null;
     private static LBSTraceClient LBSTraceclient = null;
     private BDLocationListener myListener = new BDLocationListener() {
@@ -162,7 +164,7 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
     private double Analy_lng;
     private double Stick_lat = 23.17197;
     private double Stick_lng = 113.3465;
-    private double Stick_radius_lat = 23.166;
+    private double Stick_radius_lat = 20.166;
     private double Stick_radius_lng = 113.3406;
     private String addr;
     private BaiduMap baiduMap;
@@ -943,40 +945,44 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Search_Gridview.setVisibility(View.INVISIBLE);
                 Search_Button.setVisibility(View.VISIBLE);
-                if(position==0)   //按下了取消按钮
+                if (position == 0)   //按下了取消按钮
                 {
                     Search_Operation = false;
                 }
-                if(position==1)   //按下了医院按钮
+                if (position == 1)   //按下了医院按钮
                 {
-                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat, GPS_lng)).radius(5000).pageNum(0));
                 }
-                if(position==2)    //按下了药店按钮
+                if (position == 2)    //按下了药店按钮
                 {
-                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat, GPS_lng)).radius(5000).pageNum(0));
                 }
-                if(position==3)   //按下了公园按钮
+                if (position == 3)   //按下了公园按钮
                 {
-                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat, GPS_lng)).radius(5000).pageNum(0));
                 }
-                if(position==4)    //按下了洗手间按钮
+                if (position == 4)    //按下了洗手间按钮
                 {
-                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat, GPS_lng)).radius(5000).pageNum(0));
                 }
-                if(position==5)   //按下了便利店按钮
+                if (position == 5)   //按下了便利店按钮
                 {
-                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat, GPS_lng)).radius(5000).pageNum(0));
                 }
-                if(position==6)   //按下了超市按钮
+                if (position == 6)   //按下了超市按钮
                 {
-                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat, GPS_lng)).radius(5000).pageNum(0));
                 }
-                if(position==7)   //按下了餐厅按钮
+                if (position == 7)   //按下了餐厅按钮
                 {
-                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat,GPS_lng)).radius(5000).pageNum(0));
+                    mPoiSearch.searchNearby(new PoiNearbySearchOption().keyword(Search_Types[position]).location(new LatLng(GPS_lat, GPS_lng)).radius(5000).pageNum(0));
                 }
             }
         });
+
+        //实例化通知对象
+        notificationClass = new NotificationClass(this);
+        enclosure_notification = new enclosure_notification(this);
 
         final Handler handler = new Handler(){
             @Override
@@ -985,10 +991,11 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
                     UpdatePosition();
                 }
                 if(msg.what==0x1234){
-                    Toast.makeText(MainActivity.this,"距离："+Distance+"老人距离过远，请注意老人安全",Toast.LENGTH_SHORT).show();
+                    notificationClass.showNotification();
                 }
                 if(msg.what==0x12345){
-                    Toast.makeText(MainActivity.this,"老人超出预设范围，请注意老人安全",Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(MainActivity.this,"老人超出预设范围，请注意老人安全",Toast.LENGTH_SHORT).show();
+                    enclosure_notification.showNotification();
                 }
             }
         };
@@ -1043,7 +1050,7 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
                     }
                 }
             }
-        },0,3000);
+        },0,5000);
     }
 
     private void UpdatePosition() {
