@@ -4,4 +4,6 @@
     <string name="lng"></string>
     <string name="lat"></string>
     <string name="add"></string>
+    <string name="navigation_drawer_open"/>
+    <string name="navigation_drawer_close"/>
 </resources>
