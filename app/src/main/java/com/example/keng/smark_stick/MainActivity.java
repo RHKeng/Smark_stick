@@ -1,6 +1,11 @@
 package com.example.keng.smark_stick;
 
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
+import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -283,6 +288,13 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
         super.onCreate(savedInstanceState);
         SDKInitializer.initialize(getApplicationContext());
         setContentView(R.layout.activity_main);
+
+//        if(!isOPen(this))  //用户此时没有打开gps与网络连接
+//        {
+//            openGPS(this);
+//
+//        }
+
         //获取地图控件引用
         mapView = (MapView) findViewById(R.id.map);
         baiduMap = mapView.getMap();
@@ -1100,6 +1112,25 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
         }
     }
 
+    public static final boolean isOPen(final Context context) {
+        LocationManager locationManager
+                = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        // 通过GPS卫星定位，定位级别可以精确到街（通过24颗卫星定位，在室外和空旷的地方定位准确、速度快）
+        boolean gps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        if (gps) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 强制帮用户打开GPS
+     * @param context
+     */
+    public final void openGPS(Context context) {
+        Toast.makeText(MainActivity.this,"请打开手机GPS进行定位",Toast.LENGTH_SHORT).show();
+    }
 
     private void initLocation() {
         LocationClientOption option = new LocationClientOption();
