@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/map"
+            android:icon="@drawable/old_map"
+            android:title="老人地图"/>
+        <item
+            android:id="@+id/sport_dt"
+            android:icon="@drawable/sport"
+            android:title="运动数据"/>
+        <item
+            android:id="@+id/stick_setting"
+            android:icon="@drawable/setting"
+            android:title="设置"/>
+    </group>
+
+    <item android:title="拓展功能">
+        <menu>
+            <item
+                android:id="@+id/nav_share"
+                android:icon="@drawable/ic_menu_share"
+                android:title="分享"/>
+            <item
+                android:id="@+id/nav_send"
+                android:icon="@drawable/ic_menu_send"
+                android:title="发送"/>
+        </menu>
+    </item>
+
+</menu>
