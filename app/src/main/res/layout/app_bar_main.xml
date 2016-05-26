@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context="com.indoorlocate.smart_stick.MainActivity_mainlayout"
+    tools:context="com.example.keng.smark_stick.MainActivity_mainlayout"
     style="@style/AppTheme1">
 
     <android.support.design.widget.AppBarLayout

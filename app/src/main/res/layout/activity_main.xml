@@ -3,8 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context="com.example.keng.smark_stick.MainActivity">
+    android:orientation="vertical">
+    tools:context="com.example.keng.smark_stick.MainActivity"
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,28 +16,33 @@
             android:id="@+id/textlng"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="经度:"/>
+            android:text="经度:"
+            android:textSize="20dp"
+            android:textIsSelectable="true"/>
 
         <EditText
             android:layout_width="85dp"
             android:layout_height="wrap_content"
             android:id="@+id/longitude"
-            android:text="@string/lng"
-            android:inputType="numberDecimal"/>
+            android:inputType="numberDecimal"
+            android:hint="输入经度"
+            android:focusable="true"/>
 
         <TextView
             android:id="@+id/textlat"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="纬度:"
-            android:paddingLeft="8dp"/>
+            android:paddingLeft="8dp"
+            android:textSize="20dp"/>
 
         <EditText
             android:layout_width="85dp"
             android:layout_height="wrap_content"
             android:id="@+id/latitude"
-            android:text="@string/lat"
-            android:inputType="numberDecimal"/>
+            android:inputType="numberDecimal"
+            android:focusable="true"
+            android:hint="输入纬度"/>
 
         <Button
             android:layout_width="0dp"
@@ -58,14 +63,17 @@
             android:id="@+id/textadd"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="地址:" />
+            android:text="地址:"
+            android:textSize="20dp"/>
 
         <EditText
-            android:layout_width="160dp"
+            android:layout_width="146dp"
             android:layout_height="wrap_content"
             android:id="@+id/address"
             android:text="@string/add"
-            android:inputType="text"/>
+            android:inputType="text"
+            android:focusable="true"
+            android:hint="输入地址"/>
 
         <Button
             android:layout_width="0dp"
@@ -103,7 +111,8 @@
             android:id="@+id/Route_button"
             android:layout_alignParentTop="true"
             android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true" />
+            android:layout_alignParentEnd="true"
+            android:textSize="20dp"/>
 
         <ListView
             android:layout_width="wrap_content"
@@ -134,7 +143,7 @@
             android:layout_height="wrap_content"
             android:text="地理围栏"
             android:id="@+id/Geographical_Enclosure"
-            />
+            android:textSize="20dp"/>
 
         <ListView
             android:layout_width="wrap_content"

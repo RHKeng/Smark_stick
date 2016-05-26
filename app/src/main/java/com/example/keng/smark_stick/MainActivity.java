@@ -1,6 +1,8 @@
 package com.example.keng.smark_stick;
 
+import android.content.Context;
 import android.graphics.Color;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -17,6 +19,7 @@ import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
@@ -283,6 +286,12 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
         super.onCreate(savedInstanceState);
         SDKInitializer.initialize(getApplicationContext());
         setContentView(R.layout.activity_main);
+
+        if(!isOPen(this))  //用户此时没有打开gps与网络连接
+        {
+            openGPS();
+        }
+
         //获取地图控件引用
         mapView = (MapView) findViewById(R.id.map);
         baiduMap = mapView.getMap();
@@ -1051,6 +1060,26 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
                 }
             }
         },0,5000);
+    }
+
+    public static final boolean isOPen(final Context context) {
+        LocationManager locationManager
+                = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        // 通过GPS卫星定位，定位级别可以精确到街（通过24颗卫星定位，在室外和空旷的地方定位准确、速度快）
+        boolean gps = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        if (gps) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * 强制帮用户打开GPS
+     * @param
+     */
+    public final void openGPS() {
+        Toast.makeText(MainActivity.this,"请手动打开手机GPS进行定位",Toast.LENGTH_SHORT).show();
     }
 
     private void UpdatePosition() {

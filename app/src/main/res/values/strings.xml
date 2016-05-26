@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Map_Location</string>
+    <string name="app_name">智能拐杖</string>
     <string name="action_settings">Settings</string>
     <string name="lng"></string>
     <string name="lat"></string>
