@@ -16,22 +16,14 @@
             android:textSize="20dp"
             android:textColor="@color/colorPrimaryDark"/>
 
-        <!-- THIS IS JUST A PLACEHOLDER -->
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="350dp" />
-
         <com.github.mikephil.charting.charts.BarChart
             android:id="@+id/chart1"
             android:layout_width="match_parent"
             android:layout_height="450dp" />
-
-        <!-- THIS IS JUST A PLACEHOLDER -->
-
-        <View
+        <com.github.mikephil.charting.charts.LineChart
+            android:id="@+id/chart"
             android:layout_width="match_parent"
-            android:layout_height="700dp" />
+            android:layout_height="450dp" />
 
         <TextView
             android:layout_width="match_parent"
@@ -40,6 +32,18 @@
             android:text="已经滑动到底部"
             android:textColor="@color/colorPrimaryDark"
             android:textSize="20dp"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="读取短信"
+            android:id="@+id/button"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="从数据库中读取短信内容"
+            android:id="@+id/readsms_button"/>
 
     </LinearLayout>
 

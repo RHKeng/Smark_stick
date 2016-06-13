@@ -4,16 +4,11 @@ import android.app.Activity;
 import android.app.ActivityOptions;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.net.Uri;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
 import android.text.Editable;
@@ -33,8 +28,6 @@ import android.widget.Toolbar;
 
 
 public class MainActivity2 extends Activity implements View.OnClickListener {
-    //声明一个数据库用于存储信息
-    private SQLiteDatabase sms_db;
     //声明所有控件
     private Button bt_username_clear;
     private Button bt_pwd_clear;
@@ -49,8 +42,6 @@ public class MainActivity2 extends Activity implements View.OnClickListener {
     //用于存储密码
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
-    //用于显示短信内容
-    private Uri SMS_INBOX=Uri.parse("content://sms/");
     //这里的只能接收到新发过来的短信
     private BroadcastReceiver sms_Receiver=new BroadcastReceiver() {
         @Override
@@ -172,38 +163,6 @@ public class MainActivity2 extends Activity implements View.OnClickListener {
         return super.onOptionsItemSelected(item);
     }
 
-    //用于读取系统内部已经存储好的短信
-    public void recieve_sms(){
-        ContentResolver cr=getContentResolver();
-        //查询的字段，这里只是查询两个
-        String[] projection = new String[] {"address", "body"};
-        //查询的条件
-        String where = "address=18819477458";
-        //查询的结果放在了一个Cusor中
-        Cursor cusor = cr.query(SMS_INBOX, projection,where, null,null);
-        //获取对应字段的标签值
-        int phoneNumberColumn = cusor.getColumnIndex("address");
-        int smsbodyColumn = cusor.getColumnIndex("body");
-        //根据标签值一个个查询
-        if (cusor != null) {
-            while (cusor.moveToNext()) {
-                Log.i("MainActivity",cusor.getString(phoneNumberColumn));
-                Log.i("MainActivity",cusor.getString(smsbodyColumn));
-            }
-            cusor.close();
-        }
-    }
-//创建、操作数据库的函数
-    public void createdb(){
-        //下面进行对数据库的操作
-        sms_db=SQLiteDatabase.openOrCreateDatabase(this.getFilesDir().toString()+"/my_sms",null);
-        //创建一个表
-        // String sql="CREATE TABLE test1 if not exist(_id integer primary key AUTOINCREMENT,body text NOT NULL)";
-        //sms_db.execSQL(sql);
-        ContentValues sms1=new ContentValues();
-        sms1.put("body","Hello world");
-        sms_db.insert("test1",null,sms1);
-}
 //实现单击事件
     @Override
     public void onClick(View v) {
