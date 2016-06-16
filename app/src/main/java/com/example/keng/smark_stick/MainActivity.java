@@ -1,6 +1,8 @@
 package com.example.keng.smark_stick;
 
 import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -279,7 +281,8 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
     protected static OverlayOptions fenceOverlay = null;
 
     protected static OverlayOptions fenceOverlayTemp = null;
-
+    //声明一个数据库用于存储信息
+    private SQLiteDatabase sms_db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -1060,6 +1063,8 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
                 }
             }
         },0,5000);
+        //更新位置
+        update_location();
     }
 
     public static final boolean isOPen(final Context context) {
@@ -1460,5 +1465,28 @@ public class MainActivity extends AppCompatActivity implements OnGetRoutePlanRes
                 monitoredPersons,
                 observers, validTimes, validCycle, validDate, validDays, coordType, center, radius, alarmCondition,
                 geoFenceListener);
+    }
+    //一个从数据库中提取最新位置信息的函数
+    public void update_location(){
+        sms_db= SQLiteDatabase.openOrCreateDatabase(this.getFilesDir().toString()+"/my_sms",null);
+        String[] projection = new String[] {"_id", "body","date"};
+        Cursor cursor=sms_db.query("test2",projection,null,null,null,null,null);
+        int id_Column = cursor.getColumnIndex("_id");
+        int smsbodyColumn = cursor.getColumnIndex("body");
+        Log.i("MainActivity", "查询表格2数据");
+        if (cursor != null) {
+            if (cursor.moveToLast()) {
+                Log.i("MainActivity", "查询到表格2最后一行的数据");
+                //字符数组存储用特殊符号分割的短信内容
+                String [] temp = null;
+                temp = cursor.getString(smsbodyColumn).split("\\|");
+                Stick_lat=Double.parseDouble(temp[1]);
+                Stick_lng=Double.parseDouble(temp[2]);
+                Log.i("MainActivity",cursor.getString(id_Column));
+                Log.i("MainActivity",cursor.getString(smsbodyColumn));
+            }
+            cursor.close();
+            sms_db.close();
+        }
     }
 }

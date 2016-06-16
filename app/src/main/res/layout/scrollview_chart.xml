@@ -20,16 +20,18 @@
             android:id="@+id/chart1"
             android:layout_width="match_parent"
             android:layout_height="450dp" />
+        <!--
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/chart"
             android:layout_width="match_parent"
             android:layout_height="450dp" />
+            -->
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="30dp"
             android:gravity="center"
-            android:text="已经滑动到底部"
+            android:text="上表是老人每天的运动数据"
             android:textColor="@color/colorPrimaryDark"
             android:textSize="20dp"/>
 
@@ -42,8 +44,16 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
             android:text="从数据库中读取短信内容"
             android:id="@+id/readsms_button"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="删除数据表1和2"
+            android:layout_marginTop="10dp"
+            android:id="@+id/delete_button"/>
 
     </LinearLayout>
 
